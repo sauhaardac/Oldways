@@ -1,3 +1,4 @@
 geocoder
 streamlit
 plotly
+xlrd
