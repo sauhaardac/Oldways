@@ -4,6 +4,7 @@ import geocoder
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import os
 
 st.beta_set_page_config()
 st.title('Oldways Data Analyzer')
@@ -37,8 +38,6 @@ if excel_file is not None:
 
     locations = df[["Class Type", "Teacher Name", "Class End Date (year)", "Class Location Type", "City", "State"]]
     locations.drop_duplicates(inplace=True)
-
-    import os
 
     seen = {} if not os.path.exists('loaction_dump.json') else json.load(open('loaction_dump.json', 'r'))
     lat = []
