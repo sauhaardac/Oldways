@@ -66,6 +66,22 @@ if excel_file is not None:
     '## Analysis'
     st.plotly_chart(fig, use_container_width=True)
 
+    for i in range(1, 9):
+        # figure out drop NaN later
+        pre_name = "Pre - Num." + i
+        post_name = "Post - Num." + i
 
-    if st.checkbox('Show Raw Data test'):
+        pre_post = df[[pre_name, post_name]]
+        pre_post["Difference"] = pre_post[post_name] - pre_post[pre_name]
+        total_num = 0
+        increase_num = 0
+        for i in range(len(df)):
+            if df["Difference"].iloc[i] > 0:
+                increase_num += 1
+            total_num += 1
+        print("Percent that increased is: " + str(float(increase_num)/ total_num))
+
+
+
+    if st.checkbox('Show Raw Data'):
         df
