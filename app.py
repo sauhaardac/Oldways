@@ -1,12 +1,11 @@
 import json
+import os
 
 import geocoder
 import pandas as pd
-import streamlit as st
 import plotly.express as px
-import os
+import streamlit as st
 
-st.beta_set_page_config()
 st.title('Oldways Data Analyzer')
 
 '### Inputs'
@@ -64,7 +63,16 @@ if excel_file is not None:
                          title='Class Locations', size_max=25)
     # fig.show()
     '## Analysis'
-    st.plotly_chart(fig, use_container_width=True)
+    with st.beta_expander('General Statistics'):
+        st.success(f'There have been **{len(locations)}** classes taught with these filter options.')
+        st.success(f'The classes were taught in **{len(set(location_names))}** different cities.')
+        st.plotly_chart(fig, use_container_width=True)
+        st.success(f'These classes reached **{len(df)}** students.')
+
+        heritage_counts = df["History & Heritage Positive Motivators?"].str.lower().value_counts()
+        st.success(f'**{100 * heritage_counts["yes"] / (heritage_counts["yes"] + heritage_counts["no"]):.2f}%** of the '
+                   f'{(heritage_counts["yes"] + heritage_counts["no"])} students surveyed, said heritage/history '
+                   f'are positive motivators for health.')
 
     if st.checkbox('Show Raw Data'):
         df
