@@ -66,21 +66,26 @@ if excel_file is not None:
     '## Analysis'
     st.plotly_chart(fig, use_container_width=True)
 
-    for i in range(1, 9):
-        # figure out drop NaN later
-        pre_name = "Pre - Num." + i
-        post_name = "Post - Num." + i
+    with st.beta_expander('Improvements'):
+        topics = ['Cooking Frequency', 'Herbs and Spices', 'Greens', 'Whole Grains', 'Beans', 'Tubers', 'Vegetables', 'Fruits',
+                  'Vegetarian-Based Meals', 'Exercise']
+        for i in range(1, 10):
+            # figure out drop NaN later
+            pre_name = "Pre - Num"
+            post_name = "Post - Num"
+            if i != 0:
+                pre_name += ("." + str(i))
+                post_name += ("." + str(i))
 
-        pre_post = df[[pre_name, post_name]]
-        pre_post["Difference"] = pre_post[post_name] - pre_post[pre_name]
-        total_num = 0
-        increase_num = 0
-        for i in range(len(df)):
-            if df["Difference"].iloc[i] > 0:
-                increase_num += 1
-            total_num += 1
-        print("Percent that increased is: " + str(float(increase_num)/ total_num))
-
+            pre_post = df[[pre_name, post_name]]
+            pre_post["Difference"] = pre_post[post_name] - pre_post[pre_name]
+            total_num = 0
+            increase_num = 0
+            for k in range(len(df)):  # probably there is a one line way of using this
+                if df["Difference"].iloc[k] > 0:
+                    increase_num += 1
+                total_num += 1
+            st.success("Percent that increased " + str(topics[i]) + "is: " + str(float(increase_num) / total_num))
 
 
     if st.checkbox('Show Raw Data'):
