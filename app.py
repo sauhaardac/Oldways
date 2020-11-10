@@ -51,8 +51,11 @@ if excel_file is not None:
         lng.append(seen[loc_str]['lng'])
         location_names.append(loc_str)
 
-    json.dump(seen, open('loaction_dump.json', 'w'))
-
+    try:
+        json.dump(seen, open('loaction_dump.json', 'w'))
+    except PermissionError:
+        pass
+    
     locations['lat'] = lat
     locations['lng'] = lng
     locations['Location'] = location_names
