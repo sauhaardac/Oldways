@@ -55,7 +55,7 @@ if excel_file is not None:
         json.dump(seen, open('loaction_dump.json', 'w'))
     except PermissionError:
         pass
-    
+
     locations['lat'] = lat
     locations['lng'] = lng
     locations['Location'] = location_names
@@ -73,8 +73,10 @@ if excel_file is not None:
         st.success(f'These classes reached **{len(df)}** students.')
 
         heritage_counts = df["History & Heritage Positive Motivators?"].str.lower().value_counts()
-        st.success(f'**{100 * heritage_counts["yes"] / (heritage_counts["yes"] + heritage_counts["no"]):.2f}%** of the '
-                   f'{(heritage_counts["yes"] + heritage_counts["no"])} students surveyed, said heritage/history '
+        yes = heritage_counts.get('yes', 1)
+        no = heritage_counts.get('no', 0)
+        st.success(f'**{100 * yes / (yes + no):.2f}%** of the '
+                   f'{(yes + no)} students surveyed, said heritage/history '
                    f'are positive motivators for health.')
 
     if st.checkbox('Show Raw Data'):
