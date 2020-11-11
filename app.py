@@ -80,6 +80,8 @@ if excel_file is not None:
                    f'{(yes + no)} students surveyed, said heritage/history '
                    f'are positive motivators for health.')
     with st.beta_expander('Improvements'):
+        data_view = st.radio('How would you like to view the data?', ('% of People', '# of People'))
+
         topics = ['Cooking Frequency', 'Herbs and Spices', 'Greens', 'Whole Grains', 'Beans', 'Tubers', 'Vegetables',
                   'Fruits',
                   'Vegetarian-Based Meals', 'Exercise']
@@ -103,15 +105,21 @@ if excel_file is not None:
             increase_num = len(pre_post[pre_post['Difference'] > 0])
             same_num = len(pre_post[pre_post['Difference'] == 0])
 
-            percent_increase = increase_num
-            percent_same = same_num
+            if '#' == data_view[0]:
+                percent_increase = increase_num
+                percent_same = same_num
+                percentages.append([percent_increase, 'Increased', topics[i]])
+                percentages.append([percent_same, 'No Change', topics[i]])
+                percentages.append([total_num - percent_increase - percent_same, 'Decreased', topics[i]])
+            else:
+                percent_increase = round(100 * increase_num / total_num, 2)
+                percent_same = round(100 * same_num / total_num, 2)
+                percentages.append([percent_increase, 'Increased', topics[i]])
+                percentages.append([percent_same, 'No Change', topics[i]])
+                percentages.append([100 - percent_increase - percent_same, 'Decreased', topics[i]])
 
-            percentages.append([percent_increase, 'Increased', topics[i]])
-            percentages.append([percent_same, 'No Change', topics[i]])
-            percentages.append([total_num - percent_increase - percent_same, 'Decreased', topics[i]])
-
-        percentage_df = pd.DataFrame(percentages, columns=['# of People', 'Change', 'Category'])
-        st.plotly_chart(px.bar(percentage_df, x='Category', y='# of People', color='Change',
+        percentage_df = pd.DataFrame(percentages, columns=[f'{data_view[0]} of People', 'Change', 'Category'])
+        st.plotly_chart(px.bar(percentage_df, x='Category', y=f'{data_view[0]} of People', color='Change',
                                color_discrete_map={'Increased': rgb((166, 216, 84)),
                                                    'No Change': rgb((255, 217, 47)),
                                                    'Decreased': rgb((252, 141, 98))}))
