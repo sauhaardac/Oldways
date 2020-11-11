@@ -4,6 +4,7 @@ import os
 import geocoder
 import pandas as pd
 import plotly.express as px
+from plotly.colors import label_rgb as rgb
 import streamlit as st
 
 st.title('Oldways Data Analyzer')
@@ -78,6 +79,42 @@ if excel_file is not None:
         st.success(f'**{100 * yes / (yes + no):.2f}%** of the '
                    f'{(yes + no)} students surveyed, said heritage/history '
                    f'are positive motivators for health.')
+    with st.beta_expander('Improvements'):
+        topics = ['Cooking Frequency', 'Herbs and Spices', 'Greens', 'Whole Grains', 'Beans', 'Tubers', 'Vegetables',
+                  'Fruits',
+                  'Vegetarian-Based Meals', 'Exercise']
+        percentages = []
+        for i in range(len(topics)):
+            # Create header names
+            pre_string = "Pre"
+            pre_name = "Pre - Num"
+            post_name = "Post Num"
+
+            if i != 0:  # artifact of how spreadsheet is formatted
+                pre_name += ("." + str(i))
+                post_name += ("." + str(i))
+                pre_string += ("." + str(i))
+
+            pre_post = df[[pre_name, post_name, pre_string]]
+            pre_post["Difference"] = pre_post[post_name] - pre_post[pre_name]
+            pre_post.dropna(inplace=True)  # drops the blank lines (they didn't answer)
+
+            total_num = len(pre_post)
+            increase_num = len(pre_post[pre_post['Difference'] > 0])
+            same_num = len(pre_post[pre_post['Difference'] == 0])
+
+            percent_increase = round((float(increase_num) / total_num) * 100, 2)
+            percent_same = round((float(same_num) / total_num) * 100, 2)
+
+            percentages.append([percent_increase, 'Increased', topics[i]])
+            percentages.append([percent_same, 'No Change', topics[i]])
+            percentages.append([100 - percent_increase - percent_same, 'Decreased', topics[i]])
+
+        percentage_df = pd.DataFrame(percentages, columns=['% of People Surveyed', 'Change', 'Category'])
+        st.plotly_chart(px.bar(percentage_df, x='Category', y='% of People Surveyed', color='Change',
+                               color_discrete_map={'Increased': rgb((166, 216, 84)),
+                                                   'No Change': rgb((255, 217, 47)),
+                                                   'Decreased': rgb((252, 141, 98))}))
 
     if st.checkbox('Show Raw Data'):
         df
