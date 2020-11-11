@@ -69,24 +69,37 @@ if excel_file is not None:
     with st.beta_expander('Improvements'):
         topics = ['Cooking Frequency', 'Herbs and Spices', 'Greens', 'Whole Grains', 'Beans', 'Tubers', 'Vegetables', 'Fruits',
                   'Vegetarian-Based Meals', 'Exercise']
-        for i in range(1, 10):
-            # figure out drop NaN later
+        for i in range(0, 10):
+
+            # Create header names
+            pre_string = "Pre"
             pre_name = "Pre - Num"
-            post_name = "Post - Num"
+            post_name = "Post Num"
             if i != 0:
                 pre_name += ("." + str(i))
                 post_name += ("." + str(i))
+                pre_string += ("." + str(i))
 
-            pre_post = df[[pre_name, post_name]]
+            pre_post = df[[pre_name, post_name, pre_string]]
             pre_post["Difference"] = pre_post[post_name] - pre_post[pre_name]
+            pre_post.dropna(inplace = True)  # drops the blank lines (they didn't answer)
+
+            # Loop through and find the total number of people, number that increased, and number that stayed the same
             total_num = 0
             increase_num = 0
-            for k in range(len(df)):  # probably there is a one line way of using this
-                if df["Difference"].iloc[k] > 0:
+            same_num = 0
+            for k in range(len(pre_post)):
+                if pre_post["Difference"].iloc[k] > 0:
                     increase_num += 1
+                elif pre_post["Difference"].iloc[k] == 0:
+                    same_num += 1
                 total_num += 1
-            st.success("Percent that increased " + str(topics[i]) + "is: " + str(float(increase_num) / total_num))
+            percent_increase = round((float(increase_num) / total_num) * 100, 2)
+            percent_same = round((float(same_num) / total_num) * 100, 2)
+            st.success("Percent that increased {} is: {}% ({} people out of {} total)".format(topics[i], percent_increase, increase_num, total_num))
 
-
+            # more data: Can add if we want
+            # st.warning("Percent that remained the same for {} is: {}% ({} people out of {} total)".format(topics[i], percent_same, same_num, total_num))
+            # st.success("The mean increase is {}".format(pre_post["Difference"].mean()))
     if st.checkbox('Show Raw Data'):
         df
