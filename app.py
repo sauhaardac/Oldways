@@ -1,13 +1,13 @@
 import json
+import os
 
 import geocoder
 import pandas as pd
-import streamlit as st
 import plotly.express as px
 from plotly.colors import label_rgb as rgb
 import os
+import streamlit as st
 
-st.beta_set_page_config()
 st.title('Oldways Data Analyzer')
 
 '### Inputs'
@@ -53,7 +53,10 @@ if excel_file is not None:
         lng.append(seen[loc_str]['lng'])
         location_names.append(loc_str)
 
-    json.dump(seen, open('loaction_dump.json', 'w'))
+    try:
+        json.dump(seen, open('loaction_dump.json', 'w'))
+    except PermissionError:
+        pass
 
     locations['lat'] = lat
     locations['lng'] = lng
