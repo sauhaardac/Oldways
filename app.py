@@ -1,19 +1,43 @@
 import json
+import os
 
 import geocoder
 import pandas as pd
-import streamlit as st
 import plotly.express as px
-import os
+from plotly.colors import label_rgb as rgb
+import streamlit as st
 
-st.beta_set_page_config()
 st.title('Oldways Data Analyzer')
 
 '### Inputs'
 excel_file = st.file_uploader(label='Excel File to Analyze', type=['xlsx'])
 sheet_name = st.text_input(label='Sheet Name', value='Student Lifestyle Surveys')
 header_row = st.number_input(label='Header Row', value=24) - 1
+weight_sheet_name = 'Total Weight Loss' # Spreadsheet name for weight data
+weight_header_row = 8 # Header row for weight data
+bp_sheet_name = "Blood Pressure" # Spreadsheet name for bp data
+bp_header_row = 5 # Header row for bp data
+waist_sheet_name = "Waist Circumference" # Spreadsheet for waist data
+waist_header_row = 7 # Header row for waist data
 
+
+
+def compute_average(data):
+    '''
+    Compute the average value of the given data
+    '''
+    return sum(data)/len(data)
+
+def compute_percentage(data, target):
+    '''
+    Compute the percentage of data points meeting the given target
+    test function
+    '''
+    count = 0
+    for point in data:
+        if target(point):
+            count += 1
+    return 100*count/len(data)
 
 @st.cache
 def load_sheet(excel_file, sheet_name, header_row):
@@ -21,7 +45,42 @@ def load_sheet(excel_file, sheet_name, header_row):
 
 
 if excel_file is not None:
-    df = load_sheet(excel_file, sheet_name, header_row)
+    df = load_sheet(excel_file, sheet_name, header_row) # Load all dataframes
+    df_health = load_sheet(excel_file, weight_sheet_name, weight_header_row)
+    df_bp = load_sheet(excel_file, bp_sheet_name, bp_header_row)
+    df_waist = load_sheet(excel_file, waist_sheet_name, waist_header_row)
+    '## Statistics'
+    with st.beta_expander('Health Statistics'): # Expandable info about health
+        average_weight_loss = compute_average(df_health["Weight Change lbs."])
+        average_weight_loss = f"{average_weight_loss:.2f}"
+        males = df_health.loc[df_health['Sex'] == 'M']
+        average_male_loss = compute_average(males["Weight Change lbs."])
+        average_male_loss = f"{average_male_loss:.2f}"
+        females = df_health.loc[df_health['Sex'] == 'F']
+        average_female_loss = compute_average(females["Weight Change lbs."])
+        average_female_loss = f"{average_female_loss:.2f}"
+        st.success((f'On average, the **{len(df_health["Weight Change lbs."])}** students lost **{average_weight_loss}** '
+                    f'pounds. Of these, the **{len(females)}** females lost an average of **{average_female_loss}** pounds'
+                    f' while the **{len(males)}** males lost an average of **{average_male_loss}** pounds. '))
+        #'### Location Filter'
+        #locations = st.selectbox(label= 'Locations', options=['All'] + list([loc for loc in df_health['Location'] if str(loc).startswith('SITE')]))
+        #if 'All' not in locations:
+        #    df_health = df_health[df_health['Location'].isin(locations)]
+        percent_bp_improve = compute_percentage(df_bp["Change in New HPB Rating"], lambda x: x=='Decrease')
+        percent_bp_improve = f"{percent_bp_improve:.2f}"
+        percent_bp_same = compute_percentage(df_bp["Change in New HPB Rating"], lambda x: x=='No Change')
+        percent_bp_same = f"{percent_bp_same:.2f}"
+        st.success((f'**{percent_bp_improve}%** of students improved their blood pressure by at least one stage'
+                    f'while **{percent_bp_same}%** of students saw no change in blood pressure. '))
+        waist_lost = compute_percentage(df_waist["Inches Lossed"], lambda x: x>0)
+        waist_lost = f"{waist_lost:.2f}"
+        waist_same = compute_percentage(df_waist["Inches Lossed"], lambda x: x==0)
+        waist_same = f"{waist_same:.2f}"
+        average_waist = compute_average(df_waist["Inches Lossed"])
+        average_waist = f"{average_waist:.2f}"
+        st.success((f'On average, the **{len(df_waist["Inches Lossed"])}** students lossed '
+                    f'**{average_waist}** inches on their waist, with **{waist_lost}%** of students '
+                    f'seeing improved results and **{waist_same}%** of students seeing no changes. '))
 
     '### Filters'
 
@@ -52,7 +111,10 @@ if excel_file is not None:
         lng.append(seen[loc_str]['lng'])
         location_names.append(loc_str)
 
-    json.dump(seen, open('loaction_dump.json', 'w'))
+    try:
+        json.dump(seen, open('loaction_dump.json', 'w'))
+    except PermissionError:
+        pass
 
     locations['lat'] = lat
     locations['lng'] = lng
@@ -64,7 +126,62 @@ if excel_file is not None:
                          title='Class Locations', size_max=25)
     # fig.show()
     '## Analysis'
-    st.plotly_chart(fig, use_container_width=True)
+    with st.beta_expander('General Statistics'):
+        st.success(f'There have been **{len(locations)}** classes taught with these filter options.')
+        st.success(f'The classes were taught in **{len(set(location_names))}** different cities.')
+        st.plotly_chart(fig, use_container_width=True)
+        st.success(f'These classes reached **{len(df)}** students.')
+
+        heritage_counts = df["History & Heritage Positive Motivators?"].str.lower().value_counts()
+        yes = heritage_counts.get('yes', 1)
+        no = heritage_counts.get('no', 0)
+        st.success(f'**{100 * yes / (yes + no):.2f}%** of the '
+                   f'{(yes + no)} students surveyed, said heritage/history '
+                   f'are positive motivators for health.')
+    with st.beta_expander('Improvements'):
+        data_view = st.radio('How would you like to view the data?', ('% of People', '# of People'))
+
+        topics = ['Cooking Frequency', 'Herbs and Spices', 'Greens', 'Whole Grains', 'Beans', 'Tubers', 'Vegetables',
+                  'Fruits',
+                  'Vegetarian-Based Meals', 'Exercise']
+        percentages = []
+        for i in range(len(topics)):
+            # Create header names
+            pre_string = "Pre"
+            pre_name = "Pre - Num"
+            post_name = "Post Num"
+
+            if i != 0:  # artifact of how spreadsheet is formatted
+                pre_name += ("." + str(i))
+                post_name += ("." + str(i))
+                pre_string += ("." + str(i))
+
+            pre_post = df[[pre_name, post_name, pre_string]]
+            pre_post["Difference"] = pre_post[post_name] - pre_post[pre_name]
+            pre_post.dropna(inplace=True)  # drops the blank lines (they didn't answer)
+
+            total_num = len(pre_post)
+            increase_num = len(pre_post[pre_post['Difference'] > 0])
+            same_num = len(pre_post[pre_post['Difference'] == 0])
+
+            if '#' == data_view[0]:
+                percent_increase = increase_num
+                percent_same = same_num
+                percentages.append([percent_increase, 'Increased', topics[i]])
+                percentages.append([percent_same, 'No Change', topics[i]])
+                percentages.append([total_num - percent_increase - percent_same, 'Decreased', topics[i]])
+            else:
+                percent_increase = round(100 * increase_num / total_num, 2)
+                percent_same = round(100 * same_num / total_num, 2)
+                percentages.append([percent_increase, 'Increased', topics[i]])
+                percentages.append([percent_same, 'No Change', topics[i]])
+                percentages.append([100 - percent_increase - percent_same, 'Decreased', topics[i]])
+
+        percentage_df = pd.DataFrame(percentages, columns=[f'{data_view[0]} of People', 'Change', 'Category'])
+        st.plotly_chart(px.bar(percentage_df, x='Category', y=f'{data_view[0]} of People', color='Change',
+                               color_discrete_map={'Increased': rgb((166, 216, 84)),
+                                                   'No Change': rgb((255, 217, 47)),
+                                                   'Decreased': rgb((252, 141, 98))}))
 
     if st.checkbox('Show Raw Data'):
         df
