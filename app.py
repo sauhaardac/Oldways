@@ -70,8 +70,14 @@ if excel_file is not None:
         percent_bp_improve = f"{percent_bp_improve:.2f}"
         percent_bp_same = compute_percentage(df_bp["Change in New HPB Rating"], lambda x: x=='No Change')
         percent_bp_same = f"{percent_bp_same:.2f}"
+        average_sys_bp = compute_average(df_bp["Change in Sys BP"])
+        average_dia_bp = compute_average(df_bp["Change in Dia BP"])
+        average_sys_bp = f"{average_sys_bp:.2f}"
+        average_dia_bp = f"{average_dia_bp:.2f}"
         st.success((f'**{percent_bp_improve}%** of students improved their blood pressure by at least one stage'
-                    f'while **{percent_bp_same}%** of students saw no change in blood pressure. '))
+                    f' while **{percent_bp_same}%** of students saw no change in blood pressure. On average, students'
+                    f' saw an average improvement of **{average_sys_bp}** in systolic blood pressure and **{average_dia_bp}**'
+                    f' in diastolic blood pressure'))
         waist_lost = compute_percentage(df_waist["Inches Lossed"], lambda x: x>0)
         waist_lost = f"{waist_lost:.2f}"
         waist_same = compute_percentage(df_waist["Inches Lossed"], lambda x: x==0)
