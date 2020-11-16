@@ -13,7 +13,31 @@ st.title('Oldways Data Analyzer')
 excel_file = st.file_uploader(label='Excel File to Analyze', type=['xlsx'])
 sheet_name = st.text_input(label='Sheet Name', value='Student Lifestyle Surveys')
 header_row = st.number_input(label='Header Row', value=24) - 1
+weight_sheet_name = 'Total Weight Loss' # Spreadsheet name for weight data
+weight_header_row = 8 # Header row for weight data
+bp_sheet_name = "Blood Pressure" # Spreadsheet name for bp data
+bp_header_row = 5 # Header row for bp data
+waist_sheet_name = "Waist Circumference" # Spreadsheet for waist data
+waist_header_row = 7 # Header row for waist data
 
+
+
+def compute_average(data):
+    '''
+    Compute the average value of the given data
+    '''
+    return sum(data)/len(data)
+
+def compute_percentage(data, target):
+    '''
+    Compute the percentage of data points meeting the given target
+    test function
+    '''
+    count = 0
+    for point in data:
+        if target(point):
+            count += 1
+    return 100*count/len(data)
 
 @st.cache
 def load_sheet(excel_file, sheet_name, header_row):
@@ -21,7 +45,48 @@ def load_sheet(excel_file, sheet_name, header_row):
 
 
 if excel_file is not None:
-    df = load_sheet(excel_file, sheet_name, header_row)
+    df = load_sheet(excel_file, sheet_name, header_row) # Load all dataframes
+    df_health = load_sheet(excel_file, weight_sheet_name, weight_header_row)
+    df_bp = load_sheet(excel_file, bp_sheet_name, bp_header_row)
+    df_waist = load_sheet(excel_file, waist_sheet_name, waist_header_row)
+    '## Statistics'
+    with st.beta_expander('Health Statistics'): # Expandable info about health
+        average_weight_loss = compute_average(df_health["Weight Change lbs."])
+        average_weight_loss = f"{average_weight_loss:.2f}"
+        males = df_health.loc[df_health['Sex'] == 'M']
+        average_male_loss = compute_average(males["Weight Change lbs."])
+        average_male_loss = f"{average_male_loss:.2f}"
+        females = df_health.loc[df_health['Sex'] == 'F']
+        average_female_loss = compute_average(females["Weight Change lbs."])
+        average_female_loss = f"{average_female_loss:.2f}"
+        st.success((f'On average, the **{len(df_health["Weight Change lbs."])}** students lost **{average_weight_loss}** '
+                    f'pounds. Of these, the **{len(females)}** females lost an average of **{average_female_loss}** pounds'
+                    f' while the **{len(males)}** males lost an average of **{average_male_loss}** pounds. '))
+        #'### Location Filter'
+        #locations = st.selectbox(label= 'Locations', options=['All'] + list([loc for loc in df_health['Location'] if str(loc).startswith('SITE')]))
+        #if 'All' not in locations:
+        #    df_health = df_health[df_health['Location'].isin(locations)]
+        percent_bp_improve = compute_percentage(df_bp["Change in New HPB Rating"], lambda x: x=='Decrease')
+        percent_bp_improve = f"{percent_bp_improve:.2f}"
+        percent_bp_same = compute_percentage(df_bp["Change in New HPB Rating"], lambda x: x=='No Change')
+        percent_bp_same = f"{percent_bp_same:.2f}"
+        average_sys_bp = compute_average(df_bp["Change in Sys BP"])
+        average_dia_bp = compute_average(df_bp["Change in Dia BP"])
+        average_sys_bp = f"{average_sys_bp:.2f}"
+        average_dia_bp = f"{average_dia_bp:.2f}"
+        st.success((f'**{percent_bp_improve}%** of students improved their blood pressure by at least one stage'
+                    f' while **{percent_bp_same}%** of students saw no change in blood pressure. On average, students'
+                    f' saw an average improvement of **{average_sys_bp}** in systolic blood pressure and **{average_dia_bp}**'
+                    f' in diastolic blood pressure'))
+        waist_lost = compute_percentage(df_waist["Inches Lossed"], lambda x: x>0)
+        waist_lost = f"{waist_lost:.2f}"
+        waist_same = compute_percentage(df_waist["Inches Lossed"], lambda x: x==0)
+        waist_same = f"{waist_same:.2f}"
+        average_waist = compute_average(df_waist["Inches Lossed"])
+        average_waist = f"{average_waist:.2f}"
+        st.success((f'On average, the **{len(df_waist["Inches Lossed"])}** students lossed '
+                    f'**{average_waist}** inches on their waist, with **{waist_lost}%** of students '
+                    f'seeing improved results and **{waist_same}%** of students seeing no changes. '))
 
     '### Filters'
 
