@@ -51,40 +51,60 @@ if excel_file is not None:
     df_waist = load_sheet(excel_file, waist_sheet_name, waist_header_row)
     '## Statistics'
     with st.beta_expander('Health Statistics'): # Expandable info about health
-        average_weight_loss = compute_average(df_health["Weight Change lbs."])
-        average_weight_loss = f"{average_weight_loss:.2f}"
+        weight_loss_his = compute_average(df_health["Weight Change lbs."]) # Changes in Weight (Overall, Male, Female)
+        average_weight_loss = f"{weight_loss_his:.2f}"
+        weight_loss_fig = px.histogram(df_health["Weight Change lbs."], title='Changes in Weight (Overall)', labels={'value': 'Weight Lost', 'count':'Count'})
+        st.plotly_chart(weight_loss_fig)
         males = df_health.loc[df_health['Sex'] == 'M']
+        weight_loss_his_m = px.histogram(males['Weight Change lbs.'], title = 'Changes in Weight (Male)', labels={'value':'Weight Lost', 'count':'Count'})
         average_male_loss = compute_average(males["Weight Change lbs."])
         average_male_loss = f"{average_male_loss:.2f}"
         females = df_health.loc[df_health['Sex'] == 'F']
+        weight_loss_his_f = px.histogram(females['Weight Change lbs.'], title='Changes in Weight (Female)', labels={'value':'Weight Lost', 'count':'Count'})
+        st.plotly_chart(weight_loss_his_f)
+        st.plotly_chart(weight_loss_his_m)
         average_female_loss = compute_average(females["Weight Change lbs."])
         average_female_loss = f"{average_female_loss:.2f}"
         st.success((f'On average, the **{len(df_health["Weight Change lbs."])}** students lost **{average_weight_loss}** '
                     f'pounds. Of these, the **{len(females)}** females lost an average of **{average_female_loss}** pounds'
                     f' while the **{len(males)}** males lost an average of **{average_male_loss}** pounds. '))
-        #'### Location Filter'
-        #locations = st.selectbox(label= 'Locations', options=['All'] + list([loc for loc in df_health['Location'] if str(loc).startswith('SITE')]))
-        #if 'All' not in locations:
-        #    df_health = df_health[df_health['Location'].isin(locations)]
+
+        percent_bp = [] # Changes in Blood Pressure
         percent_bp_improve = compute_percentage(df_bp["Change in New HPB Rating"], lambda x: x=='Decrease')
+        percent_bp.append(percent_bp_improve)
         percent_bp_improve = f"{percent_bp_improve:.2f}"
         percent_bp_same = compute_percentage(df_bp["Change in New HPB Rating"], lambda x: x=='No Change')
+        percent_bp.append(percent_bp_same)
+        percent_bp.append(100-percent_bp[0]-percent_bp[1])
+        percent_bp_labels = ['Decrease', "No Change", 'Increase']
         percent_bp_same = f"{percent_bp_same:.2f}"
         average_sys_bp = compute_average(df_bp["Change in Sys BP"])
         average_dia_bp = compute_average(df_bp["Change in Dia BP"])
         average_sys_bp = f"{average_sys_bp:.2f}"
         average_dia_bp = f"{average_dia_bp:.2f}"
+        bp_fig = px.pie(title='Changes in Blood Pressure Stages',values = percent_bp, names = percent_bp_labels)
+        bp_fig.update_traces(textposition='inside', textinfo='label+percent')
+        st.plotly_chart(bp_fig)
         st.success((f'**{percent_bp_improve}%** of students improved their blood pressure by at least one stage'
                     f' while **{percent_bp_same}%** of students saw no change in blood pressure. On average, students'
                     f' saw an average improvement of **{average_sys_bp}** in systolic blood pressure and **{average_dia_bp}**'
                     f' in diastolic blood pressure'))
+
+        percent_waist = [] # Changes in Waist
         waist_lost = compute_percentage(df_waist["Inches Lossed"], lambda x: x>0)
+        percent_waist.append(waist_lost)
         waist_lost = f"{waist_lost:.2f}"
         waist_same = compute_percentage(df_waist["Inches Lossed"], lambda x: x==0)
+        percent_waist.append(waist_same)
+        percent_waist.append(100-percent_waist[0]-percent_waist[1])
+        waist_label = ['Lost', 'No Change', 'Gained']
+        waist_fig = px.pie(title='Changes in Waist Inches', values = percent_waist, names = waist_label)
+        waist_fig.update_traces(textposition='inside', textinfo = 'label+percent')
+        st.plotly_chart(waist_fig)
         waist_same = f"{waist_same:.2f}"
         average_waist = compute_average(df_waist["Inches Lossed"])
         average_waist = f"{average_waist:.2f}"
-        st.success((f'On average, the **{len(df_waist["Inches Lossed"])}** students lossed '
+        st.success((f'On average, the **{len(df_waist["Inches Lossed"])}** students lost '
                     f'**{average_waist}** inches on their waist, with **{waist_lost}%** of students '
                     f'seeing improved results and **{waist_same}%** of students seeing no changes. '))
 
