@@ -288,7 +288,7 @@ if excel_file is not None:
                                    color_discrete_map={'Increased': rgb((166, 216, 84)),
                                                        'No Change': rgb((255, 217, 47)),
                                                        'Decreased': rgb((252, 141, 98))}))
-            if st.checkbox('Show Numbers'):
+            if st.checkbox('Show Improvements Numbers'):
                 if '#' == data_view[0]:
                     filler_text = " total people"
                 else:
