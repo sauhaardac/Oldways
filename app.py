@@ -282,11 +282,25 @@ if excel_file is not None:
                     percentages.append([percent_same, 'No Change', topics[i]])
                     percentages.append([100 - percent_increase - percent_same, 'Decreased', topics[i]])
 
+
             percentage_df = pd.DataFrame(percentages, columns=[f'{data_view[0]} of People', 'Change', 'Category'])
             st.plotly_chart(px.bar(percentage_df, x='Category', y=f'{data_view[0]} of People', color='Change',
                                    color_discrete_map={'Increased': rgb((166, 216, 84)),
                                                        'No Change': rgb((255, 217, 47)),
                                                        'Decreased': rgb((252, 141, 98))}))
+            if st.checkbox('Show Numbers'):
+                if '#' == data_view[0]:
+                    filler_text = " total people"
+                else:
+                    filler_text = "% of people"
+                s = ""
+                for i in range(len(percentages)):
+                    s += f'{round(percentages[i][0],2)}{filler_text} {percentages[i][1]} in {percentages[i][2]}'
+                    s += "\n"
+                    if i%3 == 2:
+                        st.text(s)
+                        s = ""
+
 
         if st.checkbox('Show Raw Data'):
             df
