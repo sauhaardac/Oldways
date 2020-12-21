@@ -9,8 +9,13 @@ import streamlit as st
 
 st.title('Oldways Data Analyzer')
 mode_selection = st.sidebar.selectbox('App Mode:', ('Filtered Analysis', 'Automatic Analysis'))
+st.sidebar.markdown(
+    "**Filtered Analysis** shows data that can be filtered by teacher or class years, including improvements in cooking frequency and number of classes taught. ")
+st.sidebar.markdown(
+    "**Automatic Analysis** shows graphs and data regarding quantitative health statisticcs and analysis of teachers, such as average improvement in weight loss")
 
 '### Inputs'
+st.markdown("Upload the Excel sheet to analyze, then use the tabs to view data analysis.")
 excel_file = st.file_uploader(label='Excel File to Analyze', type=['xlsx'])
 sheet_name = 'Student Lifestyle Surveys'
 header_row = 23
@@ -182,7 +187,8 @@ if excel_file is not None:
 
             display_df
 
-            '*Note:* Average % increase reflects the average improval rate of students in the categories of ' + ', '.join(topics)
+            '*Note:* Average % increase reflects the average improval rate of students in the categories of ' + ', '.join(
+                topics)
 
     if mode_selection == 'Filtered Analysis':
         '### Filters'
@@ -282,7 +288,6 @@ if excel_file is not None:
                     percentages.append([percent_same, 'No Change', topics[i]])
                     percentages.append([100 - percent_increase - percent_same, 'Decreased', topics[i]])
 
-
             percentage_df = pd.DataFrame(percentages, columns=[f'{data_view[0]} of People', 'Change', 'Category'])
             st.plotly_chart(px.bar(percentage_df, x='Category', y=f'{data_view[0]} of People', color='Change',
                                    color_discrete_map={'Increased': rgb((166, 216, 84)),
@@ -295,12 +300,11 @@ if excel_file is not None:
                     filler_text = "% of people"
                 s = ""
                 for i in range(len(percentages)):
-                    s += f'{round(percentages[i][0],2)}{filler_text} {percentages[i][1]} in {percentages[i][2]}'
+                    s += f'{round(percentages[i][0], 2)}{filler_text} {percentages[i][1]} in {percentages[i][2]}'
                     s += "\n"
-                    if i%3 == 2:
+                    if i % 3 == 2:
                         st.text(s)
                         s = ""
-
 
         if st.checkbox('Show Raw Data'):
             df
