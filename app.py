@@ -6,6 +6,8 @@ import pandas as pd
 import plotly.express as px
 from plotly.colors import label_rgb as rgb
 import streamlit as st
+import string
+import itertools
 
 st.title('Oldways Data Analyzer')
 mode_selection = st.sidebar.selectbox('App Mode:', ('Filtered Analysis', 'Automatic Analysis'))
@@ -306,5 +308,102 @@ if excel_file is not None:
                         st.text(s)
                         s = ""
 
+        with st.beta_expander("Qualitative Data"):
+            # qualitative data
+            # automatically gets rid of empty answers
+            obstacle = [x for x in df["Biggest Obstacle To Healthy Eating"] if str(x) != 'nan']
+            surprise = [x for x in df[
+                '"African Heritage Foods" Defined After Taking This Class/What surprised you most about the classes, recipes or African heritage foods? ']
+                        if str(x) != 'nan']
+            recipes = [x for x in
+                       df["Most useful thing you learned in this program/What recipes were most interesting to you?"] if
+                       str(x) != 'nan']
+            change = [x for x in df["Change Anything?"] if str(x) != 'nan']
+            at_home = [x for x in df["Cook any recipes at home?/If didn't why?"] if str(x) != 'nan']
+            change_eat = [x for x in df["Changed the way you eat?"] if str(x) != 'nan']
+            comments = [x for x in df["Other Comments:"] if str(x) != 'nan']
+
+            # goes through each set of responses and removes key words like "none" or "no reponse"
+            modifier = 0
+            for i in range(0, len(obstacle)):
+                if obstacle[i - modifier].lower() == 'no response' or obstacle[i - modifier].lower() == 'not sure' or obstacle[i - modifier].lower() == 'nothing' or obstacle[i - modifier].lower() == 'none':
+                    obstacle.pop(i - modifier)
+                    modifier += 1
+
+            modifier = 0
+            for i in range(0, len(change)):
+                if change[i - modifier].lower() == 'none' or change[i - modifier].lower() == 'no' or change[i - modifier].lower() == 'nothing' or change[i - modifier].lower() == "no response":
+                    change.pop(i - modifier)
+                    modifier += 1
+
+            modifier = 0
+            for i in range(0, len(at_home)):
+                if type(at_home[i - modifier]) == str:
+                    if at_home[i - modifier].lower() == 'no' or at_home[i - modifier].lower() == 'not yet' or at_home[i - modifier].lower() == 'no response':
+                        at_home.pop(i - modifier)
+                        modifier += 1
+
+            modifier = 0
+            for i in range(0, len(comments)):
+                if type(comments[i - modifier]) == str:
+                    if comments[i - modifier].lower() == 'none' or comments[i - modifier].lower() == 'no' or comments[i - modifier].lower() == 'nothing':
+                        comments.pop(i - modifier)
+                        modifier += 1
+
+            # common words banned from being used in relevancy analysis for recipes question
+            banned_words = ["how", "food", "to", "i", "i", "and", "of", "eat", "that", "a", "with", "use", "in", "can", "eating", "you", "more", "the", "not", "is", "all", "be", "about", "are", "cook", "cooking"
+                            "foods", "cooking", "using", "without", "as", "foods", "good", "have", "it", "my", "for", "learned", "meals", "prepare", "recipes", "them", "ways", "make", "try", "way", "what",
+                            "your"]
+
+            # goes through each response and add words to giant list
+            word_breakdown = []
+            for j in range(0, len(recipes)):
+                word = recipes[j].translate(str.maketrans('', '', string.punctuation)) # gets rid of punctuation
+                words = word.split() # splits into individual words
+                for k in range(0, len(words)):
+                    if words[k].lower() not in banned_words: # makes sure it's not a banned word
+                        word_breakdown.append(words[k].lower())
+
+            # goes through previous list and correlates words with how often they appear
+            word_counts = {}
+            for l in range(0, len(word_breakdown)):
+                if word_breakdown[l] not in word_counts.keys():
+                    word_counts[word_breakdown[l]] = word_breakdown.count(word_breakdown[l])
+
+            # sorts words from highest to lowest frequency
+            word_counts = dict(sorted(word_counts.items(), key=lambda item: item[1], reverse=True))
+            out = dict(itertools.islice(word_counts.items(), 15))
+
+            # sends data for bar chart
+            chart_data = pd.DataFrame(
+                out.values(),
+                out.keys()
+            )
+
+            # displays graphs and headers and responses
+            st.header("Most useful thing you learned in this program/What recipes were most interesting to you?")
+            st.text("Breakdown of top 15 key words:")
+            st.bar_chart(chart_data)
+            st.text("All responses:")
+            st.dataframe(recipes)
+            st.header('Biggest Obstacle to Healthy Eating')
+            st.text("Responses:")
+            st.dataframe(obstacle)
+            st.header('"African Heritage Foods" Defined After Taking This Class/What surprised you most about the classes, recipes or African heritage foods? ')
+            st.text("Responses:")
+            st.dataframe(surprise)
+            st.header('Change Anything?')
+            st.text("Responses:")
+            st.dataframe(change)
+            st.header("Cook any recipes at home?/If didn't why?")
+            st.text("Responses:")
+            st.dataframe(at_home)
+            st.header("Changed the way you eat?")
+            st.text("Responses:")
+            st.dataframe(change_eat)
+            st.header("Other Comments:")
+            st.text("Responses:")
+            st.dataframe(comments)
+            
         if st.checkbox('Show Raw Data'):
             df
